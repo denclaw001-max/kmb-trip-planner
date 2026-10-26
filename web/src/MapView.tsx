@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+// MapLibre v6 loads its tile-parsing worker as a sibling file of the
+// library module (…/assets/maplibre-gl-worker.mjs). The Vite bundle does
+// not emit that file, so production maps stayed blank with "Worker
+// failed to load" until the build script was made to copy it into
+// dist/assets/ (see "build" in package.json). The committed copy under
+// web/dist/assets/ is what the deployed site serves.
 import * as maplibregl from "maplibre-gl";
 import type { Feature } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
