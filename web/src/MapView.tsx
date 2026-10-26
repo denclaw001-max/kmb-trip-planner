@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import type { Feature } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -22,6 +22,47 @@ export interface Itinerary {
 
 const STYLE_URL =
   "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84/resources/styles/root.json";
+const VT_BASE =
+  "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84";
+
+// The LandsD style JSON points at its tiles through a relative "../../"
+// reference to an ArcGIS service description, which MapLibre cannot turn
+// into tile requests on its own (the map stays blank). Fetch the style,
+// rewrite the source to explicit tile URLs (note: {z}/{y}/{x} order), and
+// absolutise the glyphs path before handing it to MapLibre.
+async function loadStyle(): Promise<maplibregl.StyleSpecification> {
+  try {
+    const res = await fetch(STYLE_URL);
+    if (!res.ok) throw new Error(`style ${res.status}`);
+    const style = await res.json();
+    const src = style.sources?.esri;
+    if (src) {
+      delete src.url;
+      src.type = "vector";
+      src.scheme = "xyz";
+      src.tiles = [`${VT_BASE}/tile/{z}/{y}/{x}.pbf`];
+    }
+    style.glyphs = `${VT_BASE}/resources/fonts/{fontstack}/{range}.pbf`;
+    if (typeof style.sprite === "string" && !style.sprite.startsWith("http")) {
+      style.sprite = `${VT_BASE}/resources/sprites/sprite`;
+    }
+    return style as maplibregl.StyleSpecification;
+  } catch {
+    // Last-resort basemap so the map is never blank.
+    return {
+      version: 8,
+      sources: {
+        osm: {
+          type: "raster",
+          tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+          tileSize: 256,
+          attribution: "© OpenStreetMap contributors",
+        },
+      },
+      layers: [{ id: "osm", type: "raster", source: "osm" }],
+    } as maplibregl.StyleSpecification;
+  }
+}
 
 interface Props {
   from: Endpoint | null;
@@ -38,44 +79,55 @@ export default function MapView({ from, to, itinerary, pickTarget, onPick, onDra
   const markers = useRef<{ from?: maplibregl.Marker; to?: maplibregl.Marker }>({});
   const propsRef = useRef({ pickTarget, onPick, onDrag });
   propsRef.current = { pickTarget, onPick, onDrag };
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!divRef.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: divRef.current,
-      style: STYLE_URL,
-      center: [114.17, 22.32],
-      zoom: 10.5,
-      attributionControl: { compact: true },
-    });
-    map.addControl(new maplibregl.NavigationControl(), "top-right");
-    map.on("load", () => {
-      map.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({
-        id: "walk-lines", type: "line", source: "route",
-        filter: ["==", ["get", "kind"], "walk"],
-        paint: { "line-color": "#666", "line-width": 3, "line-dasharray": [1.5, 1.5] },
+    let cancelled = false;
+    let map: maplibregl.Map | null = null;
+    loadStyle().then((style) => {
+      if (cancelled || !divRef.current) return;
+      map = new maplibregl.Map({
+        container: divRef.current,
+        style,
+        center: [114.17, 22.32],
+        zoom: 10.5,
+        attributionControl: { compact: true },
       });
-      map.addLayer({
-        id: "bus-lines", type: "line", source: "route",
-        filter: ["==", ["get", "kind"], "bus"],
-        paint: { "line-color": "#c8102e", "line-width": 4, "line-opacity": 0.85 },
+      const m = map;
+      mapRef.current = m;
+      m.addControl(new maplibregl.NavigationControl(), "top-right");
+      m.on("load", () => {
+        m.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        m.addLayer({
+          id: "walk-lines", type: "line", source: "route",
+          filter: ["==", ["get", "kind"], "walk"],
+          paint: { "line-color": "#666", "line-width": 3, "line-dasharray": [1.5, 1.5] },
+        });
+        m.addLayer({
+          id: "bus-lines", type: "line", source: "route",
+          filter: ["==", ["get", "kind"], "bus"],
+          paint: { "line-color": "#c8102e", "line-width": 4, "line-opacity": 0.85 },
+        });
+        m.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        m.addLayer({
+          id: "stop-points", type: "circle", source: "points",
+          paint: {
+            "circle-radius": 5, "circle-color": "#fff",
+            "circle-stroke-color": "#c8102e", "circle-stroke-width": 2,
+          },
+        });
+        setReady(true);
       });
-      map.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      map.addLayer({
-        id: "stop-points", type: "circle", source: "points",
-        paint: {
-          "circle-radius": 5, "circle-color": "#fff",
-          "circle-stroke-color": "#c8102e", "circle-stroke-width": 2,
-        },
+      m.on("click", (e) => {
+        const { pickTarget, onPick } = propsRef.current;
+        if (pickTarget) onPick(pickTarget, e.lngLat.lat, e.lngLat.lng);
       });
     });
-    map.on("click", (e) => {
-      const { pickTarget, onPick } = propsRef.current;
-      if (pickTarget) onPick(pickTarget, e.lngLat.lat, e.lngLat.lng);
-    });
-    mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+    return () => {
+      cancelled = true;
+      if (map) { map.remove(); mapRef.current = null; }
+    };
   }, []);
 
   useEffect(() => {
@@ -103,11 +155,11 @@ export default function MapView({ from, to, itinerary, pickTarget, onPick, onDra
     };
     setMarker("from", from, "#1a9e54");
     setMarker("to", to, "#c8102e");
-  }, [from, to]);
+  }, [from, to, ready]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !ready) return;
     const draw = () => {
       const src = map.getSource("route") as maplibregl.GeoJSONSource | undefined;
       const psrc = map.getSource("points") as maplibregl.GeoJSONSource | undefined;
@@ -147,9 +199,8 @@ export default function MapView({ from, to, itinerary, pickTarget, onPick, onDra
         map.fitBounds(b, { padding: 50, maxZoom: 15, duration: 600 });
       }
     };
-    if (map.isStyleLoaded()) draw();
-    else map.once("load", draw);
-  }, [itinerary, from, to]);
+    draw();
+  }, [itinerary, from, to, ready]);
 
   return <div ref={divRef} className="map" />;
 }
