@@ -25,12 +25,72 @@ const STYLE_URL =
 const VT_BASE =
   "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84";
 
+const OSM_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+    },
+  },
+  layers: [{ id: "osm", type: "raster", source: "osm" }],
+} as unknown as maplibregl.StyleSpecification;
+
+// Diagnostic basemap (Phase 3 follow-up): the full LandsD style renders
+// nothing in browsers even though its tiles verify fine. MINIMAL_STYLE
+// uses the same LandsD tiles with a handful of hand-picked layers, so
+// ?basemap=minimal / ?basemap=osm / (default full LandsD) can be
+// compared in the real app to isolate the failing layer.
+const MINIMAL_STYLE = {
+  version: 8,
+  glyphs: `${VT_BASE}/resources/fonts/{fontstack}/{range}.pbf`,
+  sources: {
+    esri: {
+      type: "vector",
+      tiles: [`${VT_BASE}/tile/{z}/{y}/{x}.pbf`],
+      scheme: "xyz",
+      maxzoom: 19,
+      attribution:
+        "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy; Map information from Lands Department</a>",
+    },
+  },
+  layers: [
+    { id: "bg", type: "background", paint: { "background-color": "#eef2ea" } },
+    {
+      id: "sea", type: "fill", source: "esri",
+      "source-layer": "13_HYDRPOLY_Seafill_200K",
+      paint: { "fill-color": "#b8d4ea" },
+    },
+    {
+      id: "water", type: "fill", source: "esri",
+      "source-layer": "10_HYDRPOLY_200K",
+      paint: { "fill-color": "#a8c8e8" },
+    },
+    {
+      id: "roads", type: "line", source: "esri",
+      "source-layer": "TSPTLINE_200K:1",
+      paint: { "line-color": "#ffffff", "line-width": 2 },
+    },
+  ],
+} as unknown as maplibregl.StyleSpecification;
+
+export type BasemapMode = "landsd" | "minimal" | "osm";
+
+export function basemapMode(): BasemapMode {
+  const v = new URLSearchParams(window.location.search).get("basemap");
+  return v === "minimal" || v === "osm" ? v : "landsd";
+}
+
 // The LandsD style JSON points at its tiles through a relative "../../"
 // reference to an ArcGIS service description, which MapLibre cannot turn
 // into tile requests on its own (the map stays blank). Fetch the style,
 // rewrite the source to explicit tile URLs (note: {z}/{y}/{x} order), and
 // absolutise the glyphs path before handing it to MapLibre.
-async function loadStyle(): Promise<maplibregl.StyleSpecification> {
+async function loadStyle(mode: BasemapMode): Promise<maplibregl.StyleSpecification> {
+  if (mode === "osm") return OSM_STYLE;
+  if (mode === "minimal") return MINIMAL_STYLE;
   try {
     const res = await fetch(STYLE_URL);
     if (!res.ok) throw new Error(`style ${res.status}`);
@@ -49,18 +109,7 @@ async function loadStyle(): Promise<maplibregl.StyleSpecification> {
     return style as maplibregl.StyleSpecification;
   } catch {
     // Last-resort basemap so the map is never blank.
-    return {
-      version: 8,
-      sources: {
-        osm: {
-          type: "raster",
-          tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-          tileSize: 256,
-          attribution: "© OpenStreetMap contributors",
-        },
-      },
-      layers: [{ id: "osm", type: "raster", source: "osm" }],
-    } as maplibregl.StyleSpecification;
+    return OSM_STYLE;
   }
 }
 
@@ -80,12 +129,14 @@ export default function MapView({ from, to, itinerary, pickTarget, onPick, onDra
   const propsRef = useRef({ pickTarget, onPick, onDrag });
   propsRef.current = { pickTarget, onPick, onDrag };
   const [ready, setReady] = useState(false);
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     if (!divRef.current || mapRef.current) return;
     let cancelled = false;
     let map: maplibregl.Map | null = null;
-    loadStyle().then((style) => {
+    const mode = basemapMode();
+    loadStyle(mode).then((style) => {
       if (cancelled || !divRef.current) return;
       map = new maplibregl.Map({
         container: divRef.current,
@@ -97,7 +148,13 @@ export default function MapView({ from, to, itinerary, pickTarget, onPick, onDra
       const m = map;
       mapRef.current = m;
       m.addControl(new maplibregl.NavigationControl(), "top-right");
+      m.on("error", (e) => {
+        const msg = (e as { error?: { message?: string } }).error?.message
+          || "unknown map error";
+        setNote(`Map error (${mode}): ${msg}`);
+      });
       m.on("load", () => {
+        setNote(`Basemap "${mode}" loaded`);
         m.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         m.addLayer({
           id: "walk-lines", type: "line", source: "route",
@@ -202,5 +259,16 @@ export default function MapView({ from, to, itinerary, pickTarget, onPick, onDra
     draw();
   }, [itinerary, from, to, ready]);
 
-  return <div ref={divRef} className="map" />;
+  return (
+    <div ref={divRef} className="map">
+      {note && (
+        <div style={{
+          position: "absolute", left: 8, top: 8, zIndex: 5,
+          background: "rgba(255,255,255,.92)", padding: "2px 8px",
+          borderRadius: 4, fontSize: 12, pointerEvents: "none",
+          maxWidth: "80%",
+        }}>{note}</div>
+      )}
+    </div>
+  );
 }

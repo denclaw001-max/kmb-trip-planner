@@ -26,6 +26,7 @@ from .geo import haversine_m
 from .graph import WALK_SPEED_M_PER_MIN
 
 WAIT_MIN_PER_BOARDING = 5.0
+MAX_ITINERARIES = 5        # result cards shown per search (Dennis, 2026-10-26)
 
 
 def _earliest_board(bands, ready_abs, elapsed):
@@ -255,7 +256,7 @@ class Router:
         return self._fallback(origin, dest, pools, expanded, max_walk_m)
 
     def _select(self, candidates):
-        # Group by route sequence first: the top-3 must be three genuinely
+        # Group by route sequence first: the results must be genuinely
         # different ways to travel, not the same buses alighting one stop
         # apart (Phase 1 validation finding: hundreds of near-duplicate
         # candidates per query). Best (fastest) variant per sequence wins.
@@ -283,7 +284,7 @@ class Router:
                 for k in kept)
             if not dominated:
                 kept.append(it)
-            if len(kept) >= 3:
+            if len(kept) >= MAX_ITINERARIES:
                 break
         return kept
 
