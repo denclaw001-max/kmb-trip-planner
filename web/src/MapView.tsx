@@ -186,6 +186,37 @@ export default function MapView({ from, to, itinerary, pickTarget, onPick, onDra
           },
         });
         setReady(true);
+        // Render probe (diagnostics): once the map reports fully
+        // loaded, sample the GL canvas inside a render event and
+        // report WebGL availability + how much is actually painted.
+        // This separates "style/data broken" from "this browser
+        // cannot paint WebGL at all".
+        let probed = false;
+        m.on("render", () => {
+          if (probed || !m.loaded()) return;
+          probed = true;
+          try {
+            const c = m.getCanvas();
+            const t = document.createElement("canvas");
+            t.width = 48; t.height = 48;
+            const ctx = t.getContext("2d");
+            if (!ctx) { setNote("probe: no 2d context"); return; }
+            ctx.drawImage(c, 0, 0, 48, 48);
+            const d = ctx.getImageData(0, 0, 48, 48).data;
+            let opaque = 0, nonWhite = 0;
+            const total = 48 * 48;
+            for (let i = 0; i < d.length; i += 4) {
+              if (d[i + 3] > 0) {
+                opaque++;
+                if (!(d[i] > 245 && d[i + 1] > 245 && d[i + 2] > 245)) nonWhite++;
+              }
+            }
+            const gl2 = !!document.createElement("canvas").getContext("webgl2");
+            setNote(`probe[${mode}] webgl2=${gl2} canvas=${c.width}x${c.height} opaque=${Math.round(100 * opaque / total)}% nonwhite=${Math.round(100 * nonWhite / total)}%`);
+          } catch (err) {
+            setNote(`probe failed: ${(err as Error).message}`);
+          }
+        });
       });
       m.on("click", (e) => {
         const { pickTarget, onPick } = propsRef.current;
