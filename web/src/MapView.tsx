@@ -9,6 +9,11 @@ import * as maplibregl from "maplibre-gl";
 import type { Feature } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 
+// Explicit worker URL (with a cache-busting query): browsers that
+// visited while the worker file was missing may hold a cached failure
+// for the library's default module-relative URL.
+maplibregl.setWorkerUrl("/assets/maplibre-gl-worker.mjs?wk=2");
+
 export interface Endpoint { label: string; lat: number; lon: number }
 export interface BusLeg {
   type: "bus"; route: string; bound: string; line_key: string;
