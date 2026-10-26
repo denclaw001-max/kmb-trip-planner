@@ -8,6 +8,10 @@ Sources (all verified in Phase 0):
      — agency_id per route, used to build the Long Win (LWB) route-number set
        (the KMB ETA `co` field cannot distinguish operators — Phase 0 §2).
      — ferry stops (agency FERRY) extracted for later FR-4 use.
+     — service windows per line (Phase 4): frequencies bands + calendar
+       weekday patterns (+ calendar_dates exceptions), matched to KMB
+       lines by route number and first-stop proximity; trips without
+       frequency bands contribute their fixed first-stop departure.
   3. TD routes-and-fares GeoJSON (JSON_BUS.json, ~78MB) — per-route official
      journeyTime + fullFare. Streamed through jq, never loaded whole.
 
@@ -60,10 +64,8 @@ def get_kmb():
     return routes, stops, route_stops
 
 
-def get_gtfs_extras():
+def get_gtfs_extras(z):
     """Return (lwb_route_numbers, ferry_stops, gtfs_version_note)."""
-    blob = fetch_bytes(GTFS_URL)
-    z = zipfile.ZipFile(io.BytesIO(blob))
     version = min(f.date_time for f in z.infolist())
     version_s = "%04d-%02d-%02d" % (version[0], version[1], version[2])
 
@@ -96,6 +98,204 @@ def get_gtfs_extras():
                     "lat": float(row["stop_lat"]), "lon": float(row["stop_lon"]),
                 })
     return sorted(lwb), ferry_stops, version_s
+
+
+def _gtfs_minutes(t):
+    """'07:12:00' -> 432.0. GTFS hours may be >= 24 (after-midnight)."""
+    try:
+        h, m, s = (t or "").split(":")
+        return int(h) * 60 + int(m) + int(s) / 60.0
+    except (ValueError, AttributeError):
+        return None
+
+
+def _hav_m(lat1, lon1, lat2, lon2):
+    import math
+    r = 6371000.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = math.radians(lat2 - lat1)
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+def get_service_windows(z, lines_out, stops_out):
+    """Build per-line service windows from GTFS frequencies/calendar.
+
+    Returns (windows, exceptions, stats):
+      windows: {line_key: {flags "1111100" (Mon..Sun): bands}} where each
+        band is [start_min, end_min, headway_min] of ORIGIN departures in
+        GTFS convention (minutes may exceed 1440). Trips without a
+        frequency band contribute their fixed first-stop departure as a
+        [t, t, 0] band.
+      exceptions: {"YYYYMMDD": {"add": [flags...], "remove": [flags...]}}
+        — weekday-pattern flips derived from calendar_dates (e.g. public
+        holidays running a Sunday pattern), computed exactly at pattern
+        level from the service-level exceptions.
+    Direction matching: a GTFS trip joins the KMB line (same route
+    number, service_type 1) whose first stop is nearest the trip's own
+    first stop (must be <= 600 m), which also keeps same-numbered
+    routes of other operators apart.
+    """
+    import datetime as dt
+    from collections import defaultdict
+
+    gtfs_stops = {}
+    with z.open("stops.txt") as f:
+        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8")):
+            try:
+                gtfs_stops[row["stop_id"]] = (float(row["stop_lat"]),
+                                              float(row["stop_lon"]))
+            except (KeyError, ValueError):
+                pass
+
+    bus_route_short = {}
+    with z.open("routes.txt") as f:
+        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8")):
+            ag = row["agency_id"] or ""
+            if "KMB" in ag or "LWB" in ag:
+                bus_route_short[row["route_id"]] = row["route_short_name"]
+
+    svc_flags, svc_range = {}, {}
+    with z.open("calendar.txt") as f:
+        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8")):
+            svc_flags[row["service_id"]] = "".join(
+                row[d] for d in ("monday", "tuesday", "wednesday",
+                                 "thursday", "friday", "saturday", "sunday"))
+            svc_range[row["service_id"]] = (row["start_date"], row["end_date"])
+
+    cal_dates = []
+    try:
+        with z.open("calendar_dates.txt") as f:
+            for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8")):
+                cal_dates.append((row["date"], row["service_id"],
+                                  row["exception_type"]))
+    except KeyError:
+        pass
+
+    trip_route, trip_svc = {}, {}
+    with z.open("trips.txt") as f:
+        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8")):
+            if row["route_id"] in bus_route_short:
+                trip_route[row["trip_id"]] = bus_route_short[row["route_id"]]
+                trip_svc[row["trip_id"]] = row["service_id"]
+
+    trip_bands = {}
+    with z.open("frequencies.txt") as f:
+        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8")):
+            tid = row["trip_id"]
+            if tid not in trip_route:
+                continue
+            a = _gtfs_minutes(row["start_time"])
+            b = _gtfs_minutes(row["end_time"])
+            if a is None or b is None:
+                continue
+            try:
+                h = float(row["headway_secs"]) / 60.0
+            except (TypeError, ValueError):
+                h = 0.0
+            trip_bands.setdefault(tid, []).append([a, b, h])
+
+    trip_first = {}   # trip_id -> (stop_sequence, stop_id, departure_min)
+    with z.open("stop_times.txt") as f:
+        for row in csv.DictReader(io.TextIOWrapper(f, encoding="utf-8")):
+            tid = row["trip_id"]
+            if tid not in trip_route:
+                continue
+            try:
+                seq = int(row["stop_sequence"])
+            except (TypeError, ValueError):
+                continue
+            cur = trip_first.get(tid)
+            if cur is None or seq < cur[0]:
+                dep = _gtfs_minutes(row.get("departure_time")
+                                    or row.get("arrival_time"))
+                trip_first[tid] = (seq, row["stop_id"], dep)
+
+    cand = defaultdict(list)
+    for key, line in lines_out.items():
+        if line["service_type"] != "1" or len(line["stops"]) < 2:
+            continue
+        fs = stops_out[line["stops"][0]]
+        cand[line["route"]].append((key, fs["lat"], fs["lon"]))
+
+    agg = {}
+    matched = unmatched = 0
+    for tid, short in trip_route.items():
+        first = trip_first.get(tid)
+        lines_c = cand.get(short)
+        if first is None or not lines_c:
+            unmatched += 1
+            continue
+        gcoord = gtfs_stops.get(first[1])
+        if gcoord is None:
+            unmatched += 1
+            continue
+        best = None
+        for key, la, lo in lines_c:
+            d = _hav_m(gcoord[0], gcoord[1], la, lo)
+            if best is None or d < best[0]:
+                best = (d, key)
+        if best is None or best[0] > 600:
+            unmatched += 1
+            continue
+        matched += 1
+        flags = svc_flags.get(trip_svc.get(tid))
+        if not flags:
+            continue
+        bands = trip_bands.get(tid)
+        if bands:
+            agg.setdefault((best[1], flags), []).extend(bands)
+        elif first[2] is not None:
+            agg.setdefault((best[1], flags), []).append([first[2], first[2], 0.0])
+
+    windows = {}
+    for (key, flags), bands in agg.items():
+        bands.sort()
+        merged = []
+        for a, b, h in bands:
+            if merged and a <= merged[-1][1] + 1:
+                if b > merged[-1][1]:
+                    merged[-1][1] = b
+                if h > 0:
+                    merged[-1][2] = h if merged[-1][2] == 0 else min(merged[-1][2], h)
+            else:
+                merged.append([a, b, h])
+        windows.setdefault(key, {})[flags] = [
+            [round(a), round(b), round(h, 1)] for a, b, h in merged]
+
+    exc_by_date = defaultdict(dict)
+    for date_s, svc, etype in cal_dates:
+        exc_by_date[date_s][svc] = etype
+    exceptions = {}
+    for date_s, changes in exc_by_date.items():
+        try:
+            wd = dt.date(int(date_s[:4]), int(date_s[4:6]),
+                         int(date_s[6:8])).weekday()
+        except ValueError:
+            continue
+        before, after = set(), set()
+        for svc, fl in svc_flags.items():
+            rng = svc_range[svc]
+            if not (rng[0] <= date_s <= rng[1]):
+                continue
+            base = fl[wd] == "1"
+            if base:
+                before.add(fl)
+            is_after = base if svc not in changes else changes[svc] == "1"
+            if is_after:
+                after.add(fl)
+        add = sorted(after - before)
+        remove = sorted(before - after)
+        if add or remove:
+            exceptions[date_s] = {"add": add, "remove": remove}
+
+    stats = {"gtfs_bus_trips": len(trip_route),
+             "trips_matched_to_lines": matched,
+             "trips_unmatched": unmatched,
+             "lines_with_windows": len(windows),
+             "exception_dates": len(exceptions)}
+    return windows, exceptions, stats
 
 
 def get_td_journey():
@@ -152,7 +352,8 @@ def main():
                      "distinct_route_numbers": len({r["route"] for r in routes})}
     print("KMB:", report["kmb"], flush=True)
 
-    lwb_numbers, ferry_stops, gtfs_version = get_gtfs_extras()
+    gtfs_zip = zipfile.ZipFile(io.BytesIO(fetch_bytes(GTFS_URL)))
+    lwb_numbers, ferry_stops, gtfs_version = get_gtfs_extras(gtfs_zip)
     report["gtfs"] = {"version_files_dated": gtfs_version,
                       "lwb_route_numbers": len(lwb_numbers),
                       "ferry_stops": len(ferry_stops)}
@@ -185,8 +386,14 @@ def main():
             "orig_en": meta.get("orig_en", ""), "dest_en": meta.get("dest_en", ""),
             "stops": [sid for _, sid in seq_stops],
         }
+    windows, svc_exceptions, win_stats = get_service_windows(
+        gtfs_zip, lines_out, stops_out)
+    report["service_windows"] = win_stats
+    print("Service windows:", win_stats, flush=True)
+
     bundle = {"stops": stops_out, "lines": lines_out,
-              "lwb_route_numbers": lwb_numbers, "td_journey": td_rows}
+              "lwb_route_numbers": lwb_numbers, "td_journey": td_rows,
+              "service_windows": windows, "service_exceptions": svc_exceptions}
 
     # sanity check vs previous bundle (PRD: >5% drop in stops/lines = reject)
     prev_path = os.path.join(DATA_DIR, "bundle.json")

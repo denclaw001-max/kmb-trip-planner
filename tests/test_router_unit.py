@@ -39,7 +39,11 @@ def make_bundle():
         "L4|O|1": line("L4", ["Z", "Y"], "Y"),
     }
     return {"stops": stops, "lines": lines,
-            "lwb_route_numbers": ["L2"], "td_journey": []}
+            "lwb_route_numbers": ["L2"], "td_journey": [],
+            # Phase 4: L1 runs 10:00-11:00 daily (pattern Mon..Sun all 1),
+            # departures from origin every 10 min within the band.
+            "service_windows": {"L1|O|1": {"1111111": [[600, 660, 10]]}},
+            "service_exceptions": {}}
 
 
 def bus_legs(itin):
@@ -102,6 +106,33 @@ class RouterTests(unittest.TestCase):
         r = self.router.plan((22.2000, 114.0000), STOPS["D"])
         self.assertEqual(r["status"], "none")
         self.assertEqual(r["reason"], "origin_no_bus_stop")
+
+    def test_service_window_in_hours(self):
+        # 10:30, L1's daily pattern active -> direct L1 ride as usual.
+        r = self.router.plan(STOPS["A"], STOPS["D"],
+                             depart=(630.0, {"1111111"}))
+        self.assertEqual(r["status"], "full")
+        legs = bus_legs(r["itineraries"][0])
+        self.assertEqual([l["route"] for l in legs], ["L1"])
+
+    def test_service_window_out_of_hours(self):
+        # 11:40: L1 has stopped. The only way left is the unrestricted
+        # circular L3 to C plus the final walk to D.
+        r = self.router.plan(STOPS["A"], STOPS["D"],
+                             depart=(700.0, {"1111111"}))
+        self.assertEqual(r["status"], "full")
+        for itin in r["itineraries"]:
+            self.assertNotIn("L1", [l["route"] for l in bus_legs(itin)])
+        legs = bus_legs(r["itineraries"][0])
+        self.assertEqual([l["route"] for l in legs], ["L3"])
+
+    def test_service_window_wrong_day(self):
+        # 10:30 but today's active patterns don't include L1's daily
+        # pattern -> L1 is treated as not running today.
+        r = self.router.plan(STOPS["A"], STOPS["D"],
+                             depart=(630.0, {"0000011"}))
+        for itin in r["itineraries"]:
+            self.assertNotIn("L1", [l["route"] for l in bus_legs(itin)])
 
     def test_lwb_toggle(self):
         on = self.router.plan(STOPS["A"], STOPS["G"], include_lwb=True)

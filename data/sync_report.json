@@ -1,8 +1,8 @@
 {
   "kmb": {
     "routes_entries": 1608,
-    "stops": 6779,
-    "route_stops": 36371,
+    "stops": 6780,
+    "route_stops": 36374,
     "distinct_route_numbers": 799
   },
   "gtfs": {
@@ -26,6 +26,13 @@
     },
     "with_journey_time": 2365
   },
+  "service_windows": {
+    "gtfs_bus_trips": 22931,
+    "trips_matched_to_lines": 21857,
+    "trips_unmatched": 1074,
+    "lines_with_windows": 1218,
+    "exception_dates": 17
+  },
   "bundle_file": "bundle.json",
-  "bundle_mb": 2.26
+  "bundle_mb": 2.37
 }

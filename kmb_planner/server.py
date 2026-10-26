@@ -9,10 +9,12 @@ Static frontend (web/dist) is served at / when built.
 """
 import json
 import os
+import re
 import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
@@ -21,14 +23,17 @@ from fastapi.staticfiles import StaticFiles
 from .geo import haversine_m
 from .graph import load_graph
 from .router import Router
+from .service_time import all_flag_patterns, service_context
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUNDLE = os.path.join(BASE, "data", "bundle.json")
 DIST = os.path.join(BASE, "web", "dist")
+HKT = ZoneInfo("Asia/Hong_Kong")
 
 app = FastAPI(title="KMB Trip Planner")
 _graph = load_graph(BUNDLE)
 _router = Router(_graph)
+_FLAG_PATTERNS = all_flag_patterns(_graph)
 _photon_cache = {}
 
 # FR-4 other-transport hints (Phase 0 tiered plan): MTR heavy-rail
@@ -105,6 +110,7 @@ def health():
     mtime = datetime.fromtimestamp(os.path.getmtime(BUNDLE), timezone.utc)
     return {"status": "ok", "stops": len(_graph.stops),
             "lines": len(_graph.lines),
+            "lines_with_windows": _graph.stats.get("lines_with_service_windows", 0),
             "data_updated": mtime.isoformat()}
 
 
@@ -127,12 +133,35 @@ def search(q: str = Query(min_length=1, max_length=60)):
     return {"results": results}
 
 
+_DEPART_RE = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
+
+
+def _depart_context(depart: str):
+    """Resolve (router depart arg, meta info). Default is 'now' (HKT).
+    An optional depart=HH:MM pins the departure clock for today, which
+    also powers testing of the Phase 4 service-window behaviour."""
+    now = datetime.now(HKT)
+    m = _DEPART_RE.match(depart or "")
+    if m:
+        now = now.replace(hour=int(m.group(1)), minute=int(m.group(2)),
+                          second=0, microsecond=0)
+    clock, patterns, service_date = service_context(
+        now, _FLAG_PATTERNS, _graph.service_exceptions)
+    info = {"depart_hkt": now.strftime("%Y-%m-%d %H:%M"),
+            "service_day": service_date.isoformat(),
+            "clock_min": round(clock)}
+    return (clock, patterns), info
+
+
 @app.get("/api/plan")
 def plan(flat: float, flon: float, tlat: float, tlon: float,
-         max_transfers: int = Query(2, ge=0, le=4), lwb: bool = True):
+         max_transfers: int = Query(2, ge=0, le=4), lwb: bool = True,
+         depart: str = ""):
     t0 = time.perf_counter()
+    depart_arg, depart_info = _depart_context(depart)
     result = _router.plan((flat, flon), (tlat, tlon),
-                          max_transfers=max_transfers, include_lwb=lwb)
+                          max_transfers=max_transfers, include_lwb=lwb,
+                          depart=depart_arg)
     _enrich_paths(result, (flat, flon), (tlat, tlon))
     result["transport_hints"] = {
         "origin": _transport_hints(flat, flon),
@@ -140,7 +169,8 @@ def plan(flat: float, flon: float, tlat: float, tlon: float,
     }
     result["meta"] = {"engine_ms": round((time.perf_counter() - t0) * 1000),
                       "from": {"lat": flat, "lon": flon},
-                      "to": {"lat": tlat, "lon": tlon}}
+                      "to": {"lat": tlat, "lon": tlon},
+                      "depart": depart_info}
     return result
 
 

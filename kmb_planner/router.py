@@ -13,11 +13,34 @@ Fallback (PRD §5.3): if no stop within max_walk_m of the destination is
 reached, return the reached stop closest to the destination (with the
 report's protections: candidates >=500m apart, must make >=20% progress
 when possible, origin-area stops don't count).
+
+Phase 4 time-awareness: when plan() receives depart=(clock_min,
+active_patterns), lines carrying GTFS service windows may only be
+boarded while a departure band covers the boarding moment (band shifted
+by the ride time from the origin to the boarding stop). Within a band
+the wait estimate is half the headway (capped at 10 min); fixed
+departures carry no wait estimate. Lines without window data stay
+unrestricted — absence of data must never hide a bus.
 """
 from .geo import haversine_m
 from .graph import WALK_SPEED_M_PER_MIN
 
 WAIT_MIN_PER_BOARDING = 5.0
+
+
+def _earliest_board(bands, ready_abs, elapsed):
+    """Earliest absolute clock time the traveller is on the bus at a
+    stop `elapsed` minutes from the line's origin, given they are ready
+    at the stop at absolute time ready_abs. bands: sorted origin
+    departure bands [start, end, headway_min] (GTFS minutes, may
+    exceed 1440). Returns None when no band can still serve them."""
+    for a, b, h in bands:
+        lo = a + elapsed
+        hi = b + elapsed
+        if ready_abs <= hi:
+            wait = min(h / 2.0, 10.0) if h > 0 else 0.0
+            return max(ready_abs, lo) + wait
+    return None
 
 
 class State:
@@ -53,14 +76,24 @@ class Router:
                                     st, ("walk", stop, metres))
         return out
 
-    def _bus_round(self, pool, legs, include_lwb):
+    def _bus_round(self, pool, legs, include_lwb, bands_map=None, clock=0.0):
         """One RAPTOR round: from boarding pool (states with legs-1) ride
-        every line forward. Returns dict stop->State with legs."""
+        every line forward. Returns dict stop->State with legs.
+
+        bands_map (Phase 4, when depart time is known): line_key ->
+        None (no window data: unrestricted), [] (not running on this
+        service day), or a sorted list of departure bands. For windowed
+        lines the flat wait estimate is replaced by the band-based
+        boarding time; State arrival stays in minutes-from-trip-start,
+        so band times are converted via the absolute clock offset."""
         reached = {}
         g = self.g
         for key, line in g.lines.items():
             if not include_lwb and line["is_lwb"]:
                 continue
+            bands = bands_map.get(key) if bands_map is not None else None
+            if bands is not None and len(bands) == 0:
+                continue  # not running on this service day
             stops = line["stops"]
             prefix = line["prefix_min"]
             best_val = None      # arrival + WAIT - prefix[idx]
@@ -77,7 +110,14 @@ class Router:
                             ("bus", key, best_state.stop, best_idx))
                 st = pool.get(sid)
                 if st is not None:
-                    val = st.arrival + WAIT_MIN_PER_BOARDING - prefix[idx]
+                    if bands:
+                        board = _earliest_board(bands, clock + st.arrival,
+                                                prefix[idx])
+                        if board is None:
+                            continue
+                        val = (board - clock) - prefix[idx]
+                    else:
+                        val = st.arrival + WAIT_MIN_PER_BOARDING - prefix[idx]
                     if best_val is None or val < best_val:
                         best_val, best_state, best_idx = val, st, idx
         return reached
@@ -146,11 +186,31 @@ class Router:
 
     # --------------------------------------------------------------- plan
     def plan(self, origin, dest, max_transfers=2, max_walk_m=800,
-             transfer_walk_m=300, include_lwb=True):
+             transfer_walk_m=300, include_lwb=True, depart=None):
         g = self.g
         o_lat, o_lon = origin
         d_lat, d_lon = dest
         max_legs = max_transfers + 1
+
+        # Phase 4: resolve each line's effective departure bands for
+        # this service day once per query. depart=None keeps the legacy
+        # time-independent behaviour.
+        bands_map = None
+        clock = 0.0
+        if depart is not None:
+            clock, active_patterns = depart
+            bands_map = {}
+            for key, line in g.lines.items():
+                w = line.get("windows")
+                if not w:
+                    bands_map[key] = None
+                    continue
+                bands = []
+                for pattern, bl in w.items():
+                    if pattern in active_patterns:
+                        bands.extend(bl)
+                bands.sort()
+                bands_map[key] = bands
 
         origin_states = {}
         for sid, metres in g.stops_within(o_lat, o_lon, max_walk_m):
@@ -167,7 +227,8 @@ class Router:
         candidates = []                  # (transfers, total_min, walk_m, segs)
 
         for legs in range(1, max_legs + 1):
-            reached = self._bus_round(expanded[legs - 1], legs, include_lwb)
+            reached = self._bus_round(expanded[legs - 1], legs, include_lwb,
+                                      bands_map, clock)
             pools[legs] = reached
             expanded[legs] = self._walk_expand(reached, transfer_walk_m)
             for st in list(reached.values()) + list(expanded[legs].values()):

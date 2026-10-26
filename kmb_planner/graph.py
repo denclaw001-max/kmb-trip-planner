@@ -54,6 +54,8 @@ class Graph:
     def __init__(self, bundle):
         self.stops = bundle["stops"]            # id -> {name_tc, name_en, lat, lon}
         self.lwb_numbers = set(bundle.get("lwb_route_numbers", []))
+        self.service_windows = bundle.get("service_windows", {})
+        self.service_exceptions = bundle.get("service_exceptions", {})
         self.lines = {}                          # key -> line dict
         self.stop_lines = defaultdict(list)      # stop_id -> [(line_key, idx)]
         self.stats = {}
@@ -115,11 +117,14 @@ class Graph:
                 "stops": stops, "seg_m": seg_m, "prefix_min": prefix,
                 "total_min": prefix[-1], "time_method": method,
                 "is_lwb": line["route"] in self.lwb_numbers,
+                "windows": self.service_windows.get(key),
             }
             self.lines[key] = entry
             for idx, sid in enumerate(stops):
                 self.stop_lines[sid].append((key, idx))
         self.stats["lines_in_graph"] = len(self.lines)
+        self.stats["lines_with_service_windows"] = sum(
+            1 for e in self.lines.values() if e.get("windows"))
         self.stats["lines_excluded_special"] = excluded
         self.stats["lines_td_journey_matched"] = matched
         self.stats["lines_speed_model"] = unmatched
