@@ -1,18 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-// MapLibre v6 loads its tile-parsing worker as a sibling file of the
-// library module (…/assets/maplibre-gl-worker.mjs). The Vite bundle does
-// not emit that file, so production maps stayed blank with "Worker
-// failed to load" until the build script was made to copy it into
-// dist/assets/ (see "build" in package.json). The committed copy under
-// web/dist/assets/ is what the deployed site serves.
-import * as maplibregl from "maplibre-gl";
-import type { Feature } from "geojson";
-import "maplibre-gl/dist/maplibre-gl.css";
 
-// Explicit worker URL (with a cache-busting query): browsers that
-// visited while the worker file was missing may hold a cached failure
-// for the library's default module-relative URL.
-maplibregl.setWorkerUrl("/assets/maplibre-gl-worker.mjs?wk=2");
+// Lightweight slippy map: raster tiles as <img>, route lines as SVG,
+// markers as plain DOM elements.
+//
+// This replaced a MapLibre GL implementation (2026-10-26) after a long
+// blank-map investigation: MapLibre's WebGL canvas verifiably painted
+// the map into its drawing buffer (in-app probe: 96-99% of pixels
+// painted) yet never presented it on screen — on the user's Edge/PC,
+// phone, and in the test browser — while its controls also vanished.
+// Raster tiles + SVG present through the ordinary image/DOM pipeline
+// and work in every browser. Tiles: OpenStreetMap (attribution shown
+// on the map and in the app badge).
 
 export interface Endpoint { label: string; lat: number; lon: number }
 export interface BusLeg {
@@ -31,99 +29,6 @@ export interface Itinerary {
   transfers: number; total_minutes: number; walk_meters: number; legs: Leg[];
 }
 
-const STYLE_URL =
-  "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84/resources/styles/root.json";
-const VT_BASE =
-  "https://mapapi.geodata.gov.hk/gs/api/v1.0.0/vt/basemap/WGS84";
-
-const OSM_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
-    },
-  },
-  layers: [{ id: "osm", type: "raster", source: "osm" }],
-} as unknown as maplibregl.StyleSpecification;
-
-// Diagnostic basemap (Phase 3 follow-up): the full LandsD style renders
-// nothing in browsers even though its tiles verify fine. MINIMAL_STYLE
-// uses the same LandsD tiles with a handful of hand-picked layers, so
-// ?basemap=minimal / ?basemap=osm / (default full LandsD) can be
-// compared in the real app to isolate the failing layer.
-const MINIMAL_STYLE = {
-  version: 8,
-  glyphs: `${VT_BASE}/resources/fonts/{fontstack}/{range}.pbf`,
-  sources: {
-    esri: {
-      type: "vector",
-      tiles: [`${VT_BASE}/tile/{z}/{y}/{x}.pbf`],
-      scheme: "xyz",
-      maxzoom: 19,
-      attribution:
-        "<a href='https://api.portal.hkmapservice.gov.hk/disclaimer' target='_blank'>&copy; Map information from Lands Department</a>",
-    },
-  },
-  layers: [
-    { id: "bg", type: "background", paint: { "background-color": "#eef2ea" } },
-    {
-      id: "sea", type: "fill", source: "esri",
-      "source-layer": "13_HYDRPOLY_Seafill_200K",
-      paint: { "fill-color": "#b8d4ea" },
-    },
-    {
-      id: "water", type: "fill", source: "esri",
-      "source-layer": "10_HYDRPOLY_200K",
-      paint: { "fill-color": "#a8c8e8" },
-    },
-    {
-      id: "roads", type: "line", source: "esri",
-      "source-layer": "TSPTLINE_200K:1",
-      paint: { "line-color": "#ffffff", "line-width": 2 },
-    },
-  ],
-} as unknown as maplibregl.StyleSpecification;
-
-export type BasemapMode = "landsd" | "minimal" | "osm";
-
-export function basemapMode(): BasemapMode {
-  const v = new URLSearchParams(window.location.search).get("basemap");
-  return v === "minimal" || v === "osm" ? v : "landsd";
-}
-
-// The LandsD style JSON points at its tiles through a relative "../../"
-// reference to an ArcGIS service description, which MapLibre cannot turn
-// into tile requests on its own (the map stays blank). Fetch the style,
-// rewrite the source to explicit tile URLs (note: {z}/{y}/{x} order), and
-// absolutise the glyphs path before handing it to MapLibre.
-async function loadStyle(mode: BasemapMode): Promise<maplibregl.StyleSpecification> {
-  if (mode === "osm") return OSM_STYLE;
-  if (mode === "minimal") return MINIMAL_STYLE;
-  try {
-    const res = await fetch(STYLE_URL);
-    if (!res.ok) throw new Error(`style ${res.status}`);
-    const style = await res.json();
-    const src = style.sources?.esri;
-    if (src) {
-      delete src.url;
-      src.type = "vector";
-      src.scheme = "xyz";
-      src.tiles = [`${VT_BASE}/tile/{z}/{y}/{x}.pbf`];
-    }
-    style.glyphs = `${VT_BASE}/resources/fonts/{fontstack}/{range}.pbf`;
-    if (typeof style.sprite === "string" && !style.sprite.startsWith("http")) {
-      style.sprite = `${VT_BASE}/resources/sprites/sprite`;
-    }
-    return style as maplibregl.StyleSpecification;
-  } catch {
-    // Last-resort basemap so the map is never blank.
-    return OSM_STYLE;
-  }
-}
-
 interface Props {
   from: Endpoint | null;
   to: Endpoint | null;
@@ -133,184 +38,290 @@ interface Props {
   onDrag: (target: "from" | "to", lat: number, lon: number) => void;
 }
 
+const TILE = 256;
+const MIN_Z = 10;
+const MAX_Z = 18;
+
+function project(lat: number, lon: number, z: number) {
+  const s = TILE * 2 ** z;
+  const x = ((lon + 180) / 360) * s;
+  const sin = Math.sin((lat * Math.PI) / 180);
+  const y = (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * s;
+  return { x, y };
+}
+
+function unproject(x: number, y: number, z: number) {
+  const s = TILE * 2 ** z;
+  const lon = (x / s) * 360 - 180;
+  const n = Math.PI - (2 * Math.PI * y) / s;
+  const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+  return { lat, lon };
+}
+
+interface View { cx: number; cy: number; z: number }
+
 export default function MapView({ from, to, itinerary, pickTarget, onPick, onDrag }: Props) {
   const divRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markers = useRef<{ from?: maplibregl.Marker; to?: maplibregl.Marker }>({});
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const c0 = project(22.32, 114.17, 11);
+  const [view, setView] = useState<View>({ cx: c0.x, cy: c0.y, z: 11 });
   const propsRef = useRef({ pickTarget, onPick, onDrag });
   propsRef.current = { pickTarget, onPick, onDrag };
-  const [ready, setReady] = useState(false);
-  const [note, setNote] = useState("");
+  const panRef = useRef<{ sx: number; sy: number; cx: number; cy: number; moved: boolean } | null>(null);
+  const dragRef = useRef<"from" | "to" | null>(null);
+  const fitSigRef = useRef<string>("");
 
+  // ------------------------------------------------------------ sizing
   useEffect(() => {
-    if (!divRef.current || mapRef.current) return;
-    let cancelled = false;
-    let map: maplibregl.Map | null = null;
-    const mode = basemapMode();
-    loadStyle(mode).then((style) => {
-      if (cancelled || !divRef.current) return;
-      map = new maplibregl.Map({
-        container: divRef.current,
-        style,
-        center: [114.17, 22.32],
-        zoom: 10.5,
-        attributionControl: { compact: true },
-      });
-      const m = map;
-      mapRef.current = m;
-      m.addControl(new maplibregl.NavigationControl(), "top-right");
-      m.on("error", (e) => {
-        const msg = (e as { error?: { message?: string } }).error?.message
-          || "unknown map error";
-        setNote(`Map error (${mode}): ${msg}`);
-      });
-      m.on("load", () => {
-        setNote(`Basemap "${mode}" loaded`);
-        m.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-        m.addLayer({
-          id: "walk-lines", type: "line", source: "route",
-          filter: ["==", ["get", "kind"], "walk"],
-          paint: { "line-color": "#666", "line-width": 3, "line-dasharray": [1.5, 1.5] },
-        });
-        m.addLayer({
-          id: "bus-lines", type: "line", source: "route",
-          filter: ["==", ["get", "kind"], "bus"],
-          paint: { "line-color": "#c8102e", "line-width": 4, "line-opacity": 0.85 },
-        });
-        m.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-        m.addLayer({
-          id: "stop-points", type: "circle", source: "points",
-          paint: {
-            "circle-radius": 5, "circle-color": "#fff",
-            "circle-stroke-color": "#c8102e", "circle-stroke-width": 2,
-          },
-        });
-        setReady(true);
-        // Render probe (diagnostics): once the map reports fully
-        // loaded, sample the GL canvas inside a render event and
-        // report WebGL availability + how much is actually painted.
-        // This separates "style/data broken" from "this browser
-        // cannot paint WebGL at all".
-        let probed = false;
-        m.on("render", () => {
-          if (probed || !m.loaded()) return;
-          probed = true;
-          try {
-            const c = m.getCanvas();
-            const t = document.createElement("canvas");
-            t.width = 48; t.height = 48;
-            const ctx = t.getContext("2d");
-            if (!ctx) { setNote("probe: no 2d context"); return; }
-            ctx.drawImage(c, 0, 0, 48, 48);
-            const d = ctx.getImageData(0, 0, 48, 48).data;
-            let opaque = 0, nonWhite = 0;
-            const total = 48 * 48;
-            for (let i = 0; i < d.length; i += 4) {
-              if (d[i + 3] > 0) {
-                opaque++;
-                if (!(d[i] > 245 && d[i + 1] > 245 && d[i + 2] > 245)) nonWhite++;
-              }
-            }
-            const gl2 = !!document.createElement("canvas").getContext("webgl2");
-            setNote(`probe[${mode}] webgl2=${gl2} canvas=${c.width}x${c.height} opaque=${Math.round(100 * opaque / total)}% nonwhite=${Math.round(100 * nonWhite / total)}%`);
-          } catch (err) {
-            setNote(`probe failed: ${(err as Error).message}`);
-          }
-        });
-      });
-      m.on("click", (e) => {
-        const { pickTarget, onPick } = propsRef.current;
-        if (pickTarget) onPick(pickTarget, e.lngLat.lat, e.lngLat.lng);
-      });
+    const el = divRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      setSize({ w: el.clientWidth, h: el.clientHeight });
     });
-    return () => {
-      cancelled = true;
-      if (map) { map.remove(); mapRef.current = null; }
-    };
+    ro.observe(el);
+    setSize({ w: el.clientWidth, h: el.clientHeight });
+    return () => ro.disconnect();
   }, []);
 
+  // ------------------------------------------------------- wheel zoom
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    map.getCanvas().style.cursor = pickTarget ? "crosshair" : "";
-  }, [pickTarget]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const setMarker = (key: "from" | "to", ep: Endpoint | null, color: string) => {
-      markers.current[key]?.remove();
-      markers.current[key] = undefined;
-      if (!ep) return;
-      const m = new maplibregl.Marker({ color, draggable: true })
-        .setLngLat([ep.lon, ep.lat])
-        .setPopup(new maplibregl.Popup({ offset: 20 }).setText(ep.label))
-        .addTo(map);
-      m.on("dragend", () => {
-        const ll = m.getLngLat();
-        propsRef.current.onDrag(key, ll.lat, ll.lng);
-      });
-      markers.current[key] = m;
+    const el = divRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      setView((v) => zoomAt(v, px, py, rect.width, rect.height,
+                             e.deltaY < 0 ? 1 : -1));
     };
-    setMarker("from", from, "#1a9e54");
-    setMarker("to", to, "#c8102e");
-  }, [from, to, ready]);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
+  function zoomAt(v: View, px: number, py: number, w: number, h: number, dz: number): View {
+    const z = Math.min(MAX_Z, Math.max(MIN_Z, v.z + dz));
+    if (z === v.z) return v;
+    const wx = v.cx + (px - w / 2);
+    const wy = v.cy + (py - h / 2);
+    const ll = unproject(wx, wy, v.z);
+    const np = project(ll.lat, ll.lon, z);
+    return { cx: np.x - (px - w / 2), cy: np.y - (py - h / 2), z };
+  }
+
+  // ------------------------------------------------------------ fit
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) return;
-    const draw = () => {
-      const src = map.getSource("route") as maplibregl.GeoJSONSource | undefined;
-      const psrc = map.getSource("points") as maplibregl.GeoJSONSource | undefined;
-      if (!src || !psrc) return;
-      const features: Feature[] = [];
-      const points: Feature[] = [];
-      if (itinerary) {
-        for (const leg of itinerary.legs) {
-          if (leg.path && leg.path.length >= 2) {
-            features.push({
-              type: "Feature",
-              properties: { kind: leg.type },
-              geometry: { type: "LineString", coordinates: leg.path },
-            });
-          }
-          if (leg.type === "bus") {
-            for (const s of [leg.from_stop, leg.to_stop]) {
-              points.push({
-                type: "Feature", properties: {},
-                geometry: { type: "Point", coordinates: [s.lon, s.lat] },
-              });
-            }
-          }
+    if (!size.w || dragRef.current) return;
+    const pts: { lat: number; lon: number }[] = [];
+    if (from) pts.push(from);
+    if (to) pts.push(to);
+    if (itinerary) {
+      for (const leg of itinerary.legs) {
+        for (const [lon, lat] of leg.path || []) pts.push({ lat, lon });
+      }
+    }
+    if (!pts.length) return;
+    const sig = JSON.stringify(pts.map((p) => [p.lat.toFixed(5), p.lon.toFixed(5)]));
+    if (sig === fitSigRef.current) return;
+    fitSigRef.current = sig;
+    if (pts.length === 1) {
+      const c = project(pts[0].lat, pts[0].lon, 15);
+      setView({ cx: c.x, cy: c.y, z: 15 });
+      return;
+    }
+    const w0 = pts.map((p) => project(p.lat, p.lon, 0));
+    const xs = w0.map((p) => p.x);
+    const ys = w0.map((p) => p.y);
+    const dx = Math.max(...xs) - Math.min(...xs);
+    const dy = Math.max(...ys) - Math.min(...ys);
+    const zx = Math.log2((size.w - 90) / Math.max(dx, 1e-9));
+    const zy = Math.log2((size.h - 90) / Math.max(dy, 1e-9));
+    const z = Math.min(MAX_Z, Math.max(MIN_Z, Math.floor(Math.min(zx, zy))));
+    const mid = unproject((Math.min(...xs) + Math.max(...xs)) / 2,
+                          (Math.min(...ys) + Math.max(...ys)) / 2, 0);
+    const c = project(mid.lat, mid.lon, z);
+    setView({ cx: c.x, cy: c.y, z });
+  }, [from, to, itinerary, size]);
+
+  // ------------------------------------------------------ interaction
+  const toWorld = (px: number, py: number) => ({
+    x: view.cx + (px - size.w / 2),
+    y: view.cy + (py - size.h / 2),
+  });
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (dragRef.current) return;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    panRef.current = { sx: e.clientX, sy: e.clientY, cx: view.cx, cy: view.cy, moved: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const el = divRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (dragRef.current) {
+      const w = toWorld(e.clientX - rect.left, e.clientY - rect.top);
+      const ll = unproject(w.x, w.y, view.z);
+      propsRef.current.onDrag(dragRef.current, ll.lat, ll.lon);
+      return;
+    }
+    const p = panRef.current;
+    if (!p) return;
+    const dx = e.clientX - p.sx;
+    const dy = e.clientY - p.sy;
+    if (Math.abs(dx) + Math.abs(dy) > 5) p.moved = true;
+    if (p.moved) setView((v) => ({ ...v, cx: p.cx - dx, cy: p.cy - dy }));
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const wasDrag = dragRef.current;
+    dragRef.current = null;
+    const p = panRef.current;
+    panRef.current = null;
+    if (wasDrag || !p || p.moved) return;
+    const { pickTarget, onPick } = propsRef.current;
+    if (!pickTarget || !divRef.current) return;
+    const rect = divRef.current.getBoundingClientRect();
+    const w = toWorld(e.clientX - rect.left, e.clientY - rect.top);
+    const ll = unproject(w.x, w.y, view.z);
+    onPick(pickTarget, ll.lat, ll.lon);
+  };
+
+  // ------------------------------------------------------------ tiles
+  const tiles: React.ReactNode[] = [];
+  if (size.w > 0) {
+    const x0 = view.cx - size.w / 2;
+    const y0 = view.cy - size.h / 2;
+    const tx0 = Math.floor(x0 / TILE);
+    const ty0 = Math.floor(y0 / TILE);
+    const tx1 = Math.floor((x0 + size.w) / TILE);
+    const ty1 = Math.floor((y0 + size.h) / TILE);
+    const max = 2 ** view.z;
+    for (let tx = tx0; tx <= tx1; tx++) {
+      for (let ty = ty0; ty <= ty1; ty++) {
+        if (tx < 0 || ty < 0 || tx >= max || ty >= max) continue;
+        tiles.push(
+          <img key={`${view.z}/${tx}/${ty}`}
+            src={`https://tile.openstreetmap.org/${view.z}/${tx}/${ty}.png`}
+            alt="" draggable={false}
+            style={{
+              position: "absolute", left: tx * TILE - x0, top: ty * TILE - y0,
+              width: TILE, height: TILE, userSelect: "none", pointerEvents: "none",
+            }} />,
+        );
+      }
+    }
+  }
+
+  // ---------------------------------------------------------- overlay
+  const toScreen = (lat: number, lon: number) => {
+    const w = project(lat, lon, view.z);
+    return { x: w.x - (view.cx - size.w / 2), y: w.y - (view.cy - size.h / 2) };
+  };
+  const lines: React.ReactNode[] = [];
+  const dots: React.ReactNode[] = [];
+  if (itinerary && size.w > 0) {
+    itinerary.legs.forEach((leg, i) => {
+      if (!leg.path || leg.path.length < 2) return;
+      const pts = leg.path.map(([lon, lat]) => {
+        const s = toScreen(lat, lon);
+        return `${s.x.toFixed(1)},${s.y.toFixed(1)}`;
+      }).join(" ");
+      lines.push(
+        <polyline key={`l${i}`} points={pts} fill="none"
+          stroke={leg.type === "bus" ? "#c8102e" : "#666"}
+          strokeWidth={leg.type === "bus" ? 4 : 3}
+          strokeOpacity={leg.type === "bus" ? 0.85 : 1}
+          strokeDasharray={leg.type === "bus" ? undefined : "1 7"}
+          strokeLinecap="round" strokeLinejoin="round" />,
+      );
+      if (leg.type === "bus") {
+        for (const s of [leg.from_stop, leg.to_stop]) {
+          const p = toScreen(s.lat, s.lon);
+          dots.push(
+            <circle key={`d${i}-${s.id}`} cx={p.x} cy={p.y} r={5}
+              fill="#fff" stroke="#c8102e" strokeWidth={2} />,
+          );
         }
       }
-      src.setData({ type: "FeatureCollection", features });
-      psrc.setData({ type: "FeatureCollection", features: points });
-      const all: [number, number][] = [];
-      features.forEach((f) => {
-        if (f.geometry.type === "LineString") all.push(...(f.geometry.coordinates as [number, number][]));
-      });
-      if (from) all.push([from.lon, from.lat]);
-      if (to) all.push([to.lon, to.lat]);
-      if (all.length >= 2) {
-        const b = new maplibregl.LngLatBounds(all[0], all[0]);
-        all.forEach((c) => b.extend(c));
-        map.fitBounds(b, { padding: 50, maxZoom: 15, duration: 600 });
-      }
-    };
-    draw();
-  }, [itinerary, from, to, ready]);
+    });
+  }
+
+  const renderMarker = (ep: Endpoint | null, kind: "from" | "to") => {
+    if (!ep || size.w === 0) return null;
+    const p = toScreen(ep.lat, ep.lon);
+    const color = kind === "from" ? "#1a9e54" : "#c8102e";
+    return (
+      <div key={kind}
+        style={{
+          position: "absolute", left: p.x, top: p.y, zIndex: 6,
+          transform: "translate(-50%, -100%)", textAlign: "center",
+          cursor: "grab", touchAction: "none",
+        }}
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          dragRef.current = kind;
+          (e.target as Element).setPointerCapture?.(e.pointerId);
+        }}
+        onPointerMove={onPointerMove}
+        onPointerUp={() => { dragRef.current = null; }}
+        title={ep.label}>
+        <div style={{
+          width: 20, height: 20, margin: "0 auto", borderRadius: "50% 50% 50% 0",
+          background: color, border: "2px solid #fff",
+          transform: "rotate(-45deg)", boxShadow: "0 1px 4px rgba(0,0,0,.4)",
+        }} />
+        <div style={{
+          marginTop: 3, display: "inline-block", maxWidth: 150,
+          background: "rgba(255,255,255,.92)", borderRadius: 4, padding: "1px 6px",
+          fontSize: 11, whiteSpace: "nowrap", overflow: "hidden",
+          textOverflow: "ellipsis", boxShadow: "0 1px 3px rgba(0,0,0,.25)",
+        }}>{ep.label}</div>
+      </div>
+    );
+  };
 
   return (
-    <div ref={divRef} className="map">
-      {note && (
-        <div style={{
-          position: "absolute", left: 8, top: 8, zIndex: 5,
-          background: "rgba(255,255,255,.92)", padding: "2px 8px",
-          borderRadius: 4, fontSize: 12, pointerEvents: "none",
-          maxWidth: "80%",
-        }}>{note}</div>
-      )}
+    <div ref={divRef} className="map"
+      style={{
+        overflow: "hidden", background: "#e9eef1", touchAction: "none",
+        cursor: pickTarget ? "crosshair" : "grab",
+      }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onDoubleClick={(e) => {
+        if (!divRef.current) return;
+        const rect = divRef.current.getBoundingClientRect();
+        setView((v) => zoomAt(v, e.clientX - rect.left, e.clientY - rect.top,
+                               rect.width, rect.height, 1));
+      }}>
+      {tiles}
+      <svg style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+        width={size.w} height={size.h}>
+        {lines}
+        {dots}
+      </svg>
+      {renderMarker(from, "from")}
+      {renderMarker(to, "to")}
+      <div style={{
+        position: "absolute", right: 8, top: 8, zIndex: 7, display: "flex",
+        flexDirection: "column", boxShadow: "0 1px 4px rgba(0,0,0,.3)",
+        borderRadius: 4, overflow: "hidden",
+      }}>
+        <button type="button" aria-label="Zoom in"
+          onClick={() => setView((v) => zoomAt(v, size.w / 2, size.h / 2, size.w, size.h, 1))}
+          style={{ width: 30, height: 30, fontSize: 18, border: "none", background: "#fff", cursor: "pointer" }}>+</button>
+        <button type="button" aria-label="Zoom out"
+          onClick={() => setView((v) => zoomAt(v, size.w / 2, size.h / 2, size.w, size.h, -1))}
+          style={{ width: 30, height: 30, fontSize: 18, border: "none", background: "#fff", cursor: "pointer", borderTop: "1px solid #ddd" }}>−</button>
+      </div>
+      <div style={{
+        position: "absolute", right: 6, bottom: 4, zIndex: 5, fontSize: 11,
+        color: "#555", background: "rgba(255,255,255,.75)", padding: "0 5px",
+        borderRadius: 3, pointerEvents: "none",
+      }}>
+        © <a href="https://www.openstreetmap.org/copyright" target="_blank"
+          rel="noreferrer" style={{ color: "#555", pointerEvents: "auto" }}>OpenStreetMap</a> contributors
+      </div>
     </div>
   );
 }
