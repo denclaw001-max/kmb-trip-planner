@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: kmb-trip-planner
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m kmb_planner.server
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3

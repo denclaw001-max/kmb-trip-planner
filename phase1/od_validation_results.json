@@ -1,0 +1,1367 @@
+[
+  {
+    "id": 1,
+    "category": "direct",
+    "from": "竹園邨",
+    "to": "尖沙咀碼頭",
+    "origin": [
+      22.3453629,
+      114.1922813
+    ],
+    "dest": [
+      22.2944958,
+      114.1694018
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 203,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 48.9,
+      "routes": [
+        "7"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 2,
+    "category": "direct",
+    "from": "元朗站",
+    "to": "佐敦",
+    "origin": [
+      22.4461716,
+      114.0342117
+    ],
+    "dest": [
+      22.30481,
+      114.1717074
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 216,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 61.8,
+      "routes": [
+        "268B"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 3,
+    "category": "direct",
+    "from": "大埔中心",
+    "to": "中環",
+    "origin": [
+      22.451617,
+      114.170128
+    ],
+    "dest": [
+      22.2818286,
+      114.1582784
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 197,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 61.9,
+      "routes": [
+        "307A"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 4,
+    "category": "direct",
+    "from": "馬鞍山市中心",
+    "to": "金鐘",
+    "origin": [
+      22.4228112,
+      114.2301911
+    ],
+    "dest": [
+      22.2786406,
+      114.1662176
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 208,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 61.3,
+      "routes": [
+        "680X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 5,
+    "category": "direct",
+    "from": "觀塘市中心",
+    "to": "金鐘",
+    "origin": [
+      22.314577,
+      114.224328
+    ],
+    "dest": [
+      22.2786406,
+      114.1662176
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 202,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 39.1,
+      "routes": [
+        "601P"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 6,
+    "category": "direct",
+    "from": "堅尼地城",
+    "to": "觀塘碼頭",
+    "origin": [
+      22.2824348,
+      114.1284168
+    ],
+    "dest": [
+      22.3081332,
+      114.2214631
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 176,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 70.0,
+      "routes": [
+        "101X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 7,
+    "category": "direct",
+    "from": "元朗",
+    "to": "銅鑼灣",
+    "origin": [
+      22.4445,
+      114.031
+    ],
+    "dest": [
+      22.2809029,
+      114.1870669
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": false,
+    "problems": [],
+    "ms": 211,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 63.7,
+      "routes": [
+        "945"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 8,
+    "category": "direct",
+    "from": "粉嶺站",
+    "to": "灣仔",
+    "origin": [
+      22.4917379,
+      114.1393827
+    ],
+    "dest": [
+      22.2790146,
+      114.1724833
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": false,
+    "problems": [],
+    "ms": 299,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 70.4,
+      "routes": [
+        "373"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 9,
+    "category": "direct",
+    "from": "上水站",
+    "to": "中環",
+    "origin": [
+      22.501037,
+      114.127737
+    ],
+    "dest": [
+      22.2818286,
+      114.1582784
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 314,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 68.4,
+      "routes": [
+        "978"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 10,
+    "category": "direct",
+    "from": "坑口",
+    "to": "觀塘",
+    "origin": [
+      22.3155,
+      114.2643
+    ],
+    "dest": [
+      22.3086486,
+      114.227661
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": false,
+    "problems": [],
+    "ms": 186,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 23.9,
+      "routes": [
+        "91S"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 11,
+    "category": "transfer1",
+    "from": "天水圍市中心",
+    "to": "尖沙咀",
+    "origin": [
+      22.4588734,
+      114.0026996
+    ],
+    "dest": [
+      22.298872,
+      114.1741181
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 253,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 71.5,
+      "routes": [
+        "69X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 12,
+    "category": "transfer1",
+    "from": "葵芳站",
+    "to": "尖沙咀",
+    "origin": [
+      22.356441,
+      114.1280106
+    ],
+    "dest": [
+      22.298872,
+      114.1741181
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 285,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 45.3,
+      "routes": [
+        "37X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 13,
+    "category": "transfer1",
+    "from": "青衣站",
+    "to": "大埔墟",
+    "origin": [
+      22.3602059,
+      114.1075872
+    ],
+    "dest": [
+      22.4446507,
+      114.1706348
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 267,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 56.8,
+      "routes": [
+        "279S",
+        "73X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 14,
+    "category": "transfer1",
+    "from": "屯門站",
+    "to": "馬鞍山",
+    "origin": [
+      22.3945318,
+      113.9741756
+    ],
+    "dest": [
+      22.4247,
+      114.2317
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 180,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 81.4,
+      "routes": [
+        "263A",
+        "87K"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 15,
+    "category": "transfer1",
+    "from": "元朗",
+    "to": "將軍澳站",
+    "origin": [
+      22.4445,
+      114.031
+    ],
+    "dest": [
+      22.3072888,
+      114.2600599
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 185,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 85.9,
+      "routes": [
+        "268C",
+        "296A"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 16,
+    "category": "transfer1",
+    "from": "荃灣站",
+    "to": "馬鞍山",
+    "origin": [
+      22.3740307,
+      114.1176731
+    ],
+    "dest": [
+      22.4247,
+      114.2317
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 211,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 65.0,
+      "routes": [
+        "43X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 17,
+    "category": "transfer1",
+    "from": "大埔墟",
+    "to": "屯門",
+    "origin": [
+      22.4446507,
+      114.1706348
+    ],
+    "dest": [
+      22.3788328,
+      113.9528336
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 179,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 101.2,
+      "routes": [
+        "73X",
+        "59A"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 18,
+    "category": "transfer1",
+    "from": "沙田市中心",
+    "to": "屯門站",
+    "origin": [
+      22.3824301,
+      114.1893998
+    ],
+    "dest": [
+      22.3945318,
+      113.9741756
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 210,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 54.4,
+      "routes": [
+        "263"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 19,
+    "category": "transfer1",
+    "from": "東涌站",
+    "to": "尖沙咀",
+    "origin": [
+      22.2893069,
+      113.941452
+    ],
+    "dest": [
+      22.298872,
+      114.1741181
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 153,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 88.4,
+      "routes": [
+        "E32",
+        "49"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 20,
+    "category": "transfer1",
+    "from": "香港國際機場",
+    "to": "旺角",
+    "origin": [
+      22.3155,
+      113.9366
+    ],
+    "dest": [
+      22.319308,
+      114.1698076
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 189,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 89.4,
+      "routes": [
+        "A41P",
+        "70S"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 21,
+    "category": "transfer1",
+    "from": "柴灣",
+    "to": "屯門",
+    "origin": [
+      22.2647834,
+      114.2372384
+    ],
+    "dest": [
+      22.3788328,
+      113.9528336
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 142,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 111.6,
+      "routes": [
+        "606X",
+        "259D"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 22,
+    "category": "transfer1",
+    "from": "杏花邨",
+    "to": "荃灣",
+    "origin": [
+      22.2778588,
+      114.2402645
+    ],
+    "dest": [
+      22.3716605,
+      114.1134699
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 167,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 96.5,
+      "routes": [
+        "118P",
+        "30X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 23,
+    "category": "transfer1",
+    "from": "天水圍",
+    "to": "大埔",
+    "origin": [
+      22.4477229,
+      114.0042489
+    ],
+    "dest": [
+      22.4494841,
+      114.1632063
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 167,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 65.1,
+      "routes": [
+        "265S"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 24,
+    "category": "transfer1",
+    "from": "北角",
+    "to": "將軍澳",
+    "origin": [
+      22.2906565,
+      114.1989737
+    ],
+    "dest": [
+      22.3087855,
+      114.259633
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 190,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 38.4,
+      "routes": [
+        "619X",
+        "296A"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 25,
+    "category": "transfer1",
+    "from": "西貢",
+    "to": "尖沙咀",
+    "origin": [
+      22.3822489,
+      114.2728277
+    ],
+    "dest": [
+      22.298872,
+      114.1741181
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 133,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 64.8,
+      "routes": [
+        "292P",
+        "224X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 26,
+    "category": "transfer2",
+    "from": "屯門",
+    "to": "西貢",
+    "origin": [
+      22.3788328,
+      113.9528336
+    ],
+    "dest": [
+      22.3822489,
+      114.2728277
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 107,
+    "top": {
+      "transfers": 2,
+      "total_minutes": 122.5,
+      "routes": [
+        "R33",
+        "61X",
+        "92"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 27,
+    "category": "transfer2",
+    "from": "馬鞍山",
+    "to": "葵芳",
+    "origin": [
+      22.4247,
+      114.2317
+    ],
+    "dest": [
+      22.3568855,
+      114.1278558
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 252,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 63.0,
+      "routes": [
+        "40E"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 28,
+    "category": "transfer2",
+    "from": "上水",
+    "to": "東涌",
+    "origin": [
+      22.5012,
+      114.1287
+    ],
+    "dest": [
+      22.2892449,
+      113.9413739
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 174,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 100.2,
+      "routes": [
+        "E43"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 29,
+    "category": "transfer2",
+    "from": "觀塘",
+    "to": "大埔",
+    "origin": [
+      22.3086486,
+      114.227661
+    ],
+    "dest": [
+      22.4494841,
+      114.1632063
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": false,
+    "problems": [],
+    "ms": 214,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 60.0,
+      "routes": [
+        "274X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 30,
+    "category": "transfer2",
+    "from": "黃大仙",
+    "to": "香港國際機場",
+    "origin": [
+      22.3447333,
+      114.20201
+    ],
+    "dest": [
+      22.3155,
+      113.9366
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": false,
+    "problems": [],
+    "ms": 221,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 99.9,
+      "routes": [
+        "85M",
+        "A41P"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 31,
+    "category": "transfer2",
+    "from": "太和",
+    "to": "銅鑼灣",
+    "origin": [
+      22.4510605,
+      114.1611472
+    ],
+    "dest": [
+      22.2809029,
+      114.1870669
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 183,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 98.6,
+      "routes": [
+        "307P"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 32,
+    "category": "transfer2",
+    "from": "小西灣",
+    "to": "元朗",
+    "origin": [
+      22.2637273,
+      114.2502079
+    ],
+    "dest": [
+      22.4445,
+      114.031
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 174,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 95.2,
+      "routes": [
+        "606",
+        "945"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 33,
+    "category": "transfer2",
+    "from": "天水圍",
+    "to": "馬鞍山",
+    "origin": [
+      22.4477229,
+      114.0042489
+    ],
+    "dest": [
+      22.4247,
+      114.2317
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 173,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 91.2,
+      "routes": [
+        "69X",
+        "286D"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 34,
+    "category": "transfer2",
+    "from": "長沙灣",
+    "to": "西貢",
+    "origin": [
+      22.33719,
+      114.153727
+    ],
+    "dest": [
+      22.3822489,
+      114.2728277
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 262,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 78.3,
+      "routes": [
+        "42",
+        "92"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 35,
+    "category": "transfer2",
+    "from": "調景嶺",
+    "to": "屯門",
+    "origin": [
+      22.3040753,
+      114.2523705
+    ],
+    "dest": [
+      22.3788328,
+      113.9528336
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 142,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 122.0,
+      "routes": [
+        "290E",
+        "259D"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 36,
+    "category": "fallback",
+    "from": "黃大仙",
+    "to": "赤柱",
+    "origin": [
+      22.3447333,
+      114.20201
+    ],
+    "dest": [
+      22.218,
+      114.226
+    ],
+    "status": "partial",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 237,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 61.2,
+      "routes": [
+        "302A",
+        "106P"
+      ]
+    },
+    "remaining_meters": 4937
+  },
+  {
+    "id": 37,
+    "category": "fallback",
+    "from": "中環",
+    "to": "大澳",
+    "origin": [
+      22.2818286,
+      114.1582784
+    ],
+    "dest": [
+      22.258,
+      113.863
+    ],
+    "status": "partial",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 205,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 112.8,
+      "routes": [
+        "960",
+        "E37C"
+      ]
+    },
+    "remaining_meters": 6305
+  },
+  {
+    "id": 38,
+    "category": "fallback",
+    "from": "沙田",
+    "to": "長洲",
+    "origin": [
+      22.3815527,
+      114.1904697
+    ],
+    "dest": [
+      22.209,
+      114.028
+    ],
+    "status": "partial",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 244,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 69.6,
+      "routes": [
+        "170"
+      ]
+    },
+    "remaining_meters": 12004
+  },
+  {
+    "id": 39,
+    "category": "fallback",
+    "from": "旺角",
+    "to": "蒲台島",
+    "origin": [
+      22.319308,
+      114.1698076
+    ],
+    "dest": [
+      22.169,
+      114.259
+    ],
+    "status": "partial",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 267,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 60.2,
+      "routes": [
+        "118"
+      ]
+    },
+    "remaining_meters": 10435
+  },
+  {
+    "id": 40,
+    "category": "fallback",
+    "from": "元朗",
+    "to": "梅窩",
+    "origin": [
+      22.4445,
+      114.031
+    ],
+    "dest": [
+      22.265,
+      113.994
+    ],
+    "status": "partial",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 209,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 85.3,
+      "routes": [
+        "E36A"
+      ]
+    },
+    "remaining_meters": 5371
+  },
+  {
+    "id": 41,
+    "category": "fallback",
+    "from": "中環",
+    "to": "太平山頂",
+    "origin": [
+      22.2818286,
+      114.1582784
+    ],
+    "dest": [
+      22.2759,
+      114.1455
+    ],
+    "status": "partial",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 239,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 15.0,
+      "routes": [
+        "103"
+      ]
+    },
+    "remaining_meters": 842
+  },
+  {
+    "id": 42,
+    "category": "edge",
+    "from": "尖沙咀碼頭",
+    "to": "竹園邨",
+    "origin": [
+      22.2944958,
+      114.1694018
+    ],
+    "dest": [
+      22.3453629,
+      114.1922813
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 185,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 43.3,
+      "routes": [
+        "5"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 43,
+    "category": "edge",
+    "from": "大角咀",
+    "to": "黃大仙",
+    "origin": [
+      22.3265,
+      114.1625
+    ],
+    "dest": [
+      22.3447333,
+      114.20201
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 227,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 35.9,
+      "routes": [
+        "10"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 44,
+    "category": "edge",
+    "from": "旺角",
+    "to": "奧運站",
+    "origin": [
+      22.319308,
+      114.1698076
+    ],
+    "dest": [
+      22.3188701,
+      114.1606361
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 241,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 8.5,
+      "routes": [
+        "66X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 45,
+    "category": "edge",
+    "from": "鴨脷洲邨",
+    "to": "荃灣",
+    "origin": [
+      22.2445136,
+      114.1493397
+    ],
+    "dest": [
+      22.3716605,
+      114.1134699
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 164,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 89.5,
+      "routes": [
+        "170",
+        "R42"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 46,
+    "category": "edge",
+    "from": "大帽山郊野公園",
+    "to": "荃灣",
+    "origin": [
+      22.4115,
+      114.1228
+    ],
+    "dest": [
+      22.3716605,
+      114.1134699
+    ],
+    "status": "none",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 0,
+    "top": null,
+    "remaining_meters": null
+  },
+  {
+    "id": 47,
+    "category": "edge",
+    "from": "紅磡站",
+    "to": "啟德",
+    "origin": [
+      22.3027351,
+      114.1819594
+    ],
+    "dest": [
+      22.3301046,
+      114.1989492
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 215,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 26.6,
+      "routes": [
+        "275X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 48,
+    "category": "edge",
+    "from": "科學園",
+    "to": "中環",
+    "origin": [
+      22.4156358,
+      114.2140858
+    ],
+    "dest": [
+      22.2818286,
+      114.1582784
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 186,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 54.9,
+      "routes": [
+        "900X"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 49,
+    "category": "edge",
+    "from": "落馬洲站",
+    "to": "中環",
+    "origin": [
+      22.5145946,
+      114.0661814
+    ],
+    "dest": [
+      22.2818286,
+      114.1582784
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": null,
+    "problems": [],
+    "ms": 103,
+    "top": {
+      "transfers": 1,
+      "total_minutes": 100.6,
+      "routes": [
+        "B1",
+        "945"
+      ]
+    },
+    "remaining_meters": null
+  },
+  {
+    "id": 50,
+    "category": "edge",
+    "from": "香港迪士尼樂園",
+    "to": "屯門",
+    "origin": [
+      22.3130698,
+      114.0409846
+    ],
+    "dest": [
+      22.3788328,
+      113.9528336
+    ],
+    "status": "full",
+    "status_ok": true,
+    "expected_match": true,
+    "problems": [],
+    "ms": 132,
+    "top": {
+      "transfers": 0,
+      "total_minutes": 55.8,
+      "routes": [
+        "R33"
+      ]
+    },
+    "remaining_meters": null
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "kmb": {
+    "routes_entries": 1608,
+    "stops": 6779,
+    "route_stops": 36371,
+    "distinct_route_numbers": 799
+  },
+  "gtfs": {
+    "version_files_dated": "2026-10-14",
+    "lwb_route_numbers": 57,
+    "ferry_stops": 74
+  },
+  "td_geojson": {
+    "route_variants": 2365,
+    "companies": {
+      "KMB": 1165,
+      "KMB+CTB": 187,
+      "LWB": 148,
+      "LWB+CTB": 3,
+      "CTB": 665,
+      "NLB": 94,
+      "LRTFeeder": 45,
+      "XB": 27,
+      "DB": 18,
+      "PI": 13
+    },
+    "with_journey_time": 2365
+  },
+  "bundle_file": "bundle.json",
+  "bundle_mb": 2.26
+}

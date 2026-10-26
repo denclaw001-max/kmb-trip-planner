@@ -1,0 +1,142 @@
+[
+  {
+    "query": "時代廣場 銅鑼灣",
+    "photon_rank": 1,
+    "photon_top": "City super-時代廣場　City'super-Times Square 時代廣場 灣仔區 Wan Chai Di",
+    "nominatim_rank": 1,
+    "nominatim_top": "時代廣場 Times Square, 1, 摩利臣山 Morrison Hill, 灣仔區 Wan Chai Distr"
+  },
+  {
+    "query": "香港國際機場",
+    "photon_rank": 1,
+    "photon_top": "香港國際機場 Hong Kong International Airport 航天城東路 Sky City Road E",
+    "nominatim_rank": 1,
+    "nominatim_top": "香港國際機場 Hong Kong International Airport, 達東路 Tat Tung Road, 東"
+  },
+  {
+    "query": "太平山頂",
+    "photon_rank": null,
+    "photon_top": "太平山 Victoria Peak  中西區 Central and Western District 香港 Hong ",
+    "nominatim_rank": 1,
+    "nominatim_top": "太平山餐廳 The Peak Lookout, 121, 夏力道 Harlech Road, 爐峰峽 Victoria "
+  },
+  {
+    "query": "香港迪士尼樂園",
+    "photon_rank": 1,
+    "photon_top": "香港迪士尼樂園 Hong Kong Disneyland 綵排道 Rehearsal Road 荃灣區 Tsuen Wa",
+    "nominatim_rank": 1,
+    "nominatim_top": "香港迪士尼樂園 Hong Kong Disneyland, 神奇道 Magic Road, 大嶼山 Lantau, 離島"
+  },
+  {
+    "query": "海洋公園 香港",
+    "photon_rank": 1,
+    "photon_top": "海洋公園 Ocean Park 海洋公園道 Ocean Park Road 南區 Southern District  ",
+    "nominatim_rank": 1,
+    "nominatim_top": "香港海洋公園 Ocean Park Hong Kong, 海洋公園道 Ocean Park Road, 黃竹坑新圍 Wo"
+  },
+  {
+    "query": "朗豪坊 旺角",
+    "photon_rank": 1,
+    "photon_top": "朗豪坊 Langham Place 亞皆老街 Argyle Street 油尖旺區 Yau Tsim Mong Dist",
+    "nominatim_rank": 1,
+    "nominatim_top": "朗豪坊 Langham Place, 18, 旺角 Mong Kok, 油尖旺區 Yau Tsim Mong Distr"
+  },
+  {
+    "query": "海港城 尖沙咀",
+    "photon_rank": 1,
+    "photon_top": "海港城 Harbour City 廣東道 Canton Road 尖沙咀 Tsim Sha Tsui   香港 Hong",
+    "nominatim_rank": 1,
+    "nominatim_top": "海港城 Harbour City, 3--27, 港威大道 Gateway Boulevard, 海港城 Harbour"
+  },
+  {
+    "query": "新城市廣場 沙田",
+    "photon_rank": 1,
+    "photon_top": "新城市廣場 New Town Plaza 沙田正街 Sha Tin Centre Street 沙田區 Sha Tin ",
+    "nominatim_rank": null,
+    "nominatim_top": "沙田正街 Sha Tin Centre Street, 1期 Phase 1, 沙田市中心 Sha Tin Town C"
+  },
+  {
+    "query": "太古廣場 金鐘",
+    "photon_rank": 1,
+    "photon_top": "太古廣場 Pacific Place 金鐘道 Queensway 金鐘 Admiralty 香港 Hong Kong  ",
+    "nominatim_rank": 1,
+    "nominatim_top": "太古廣場 Pacific Place, 88, 柏暉徑 Pacific Place Drive, 金鐘 Admiralt"
+  },
+  {
+    "query": "apm 觀塘",
+    "photon_rank": 1,
+    "photon_top": "apm 觀塘道 Kwun Tong Road 觀塘區 Kwun Tong District 香港 Hong Kong  ",
+    "nominatim_rank": 1,
+    "nominatim_top": "apm, 觀塘道下通道 Kwun Tong Road underpass, 裕民坊 Yue Man Square, 觀塘"
+  },
+  {
+    "query": "屯門市廣場",
+    "photon_rank": 1,
+    "photon_top": "屯門市廣場 Tuen Mun Town Plaza 屯隆街 Tuen Lung Street 屯門區 Tuen Mun ",
+    "nominatim_rank": 1,
+    "nominatim_top": "屯門公路 Tuen Mun Road, 屯門市廣場 Tuen Mun Town Plaza, 屯門市中心 Tuen Mu"
+  },
+  {
+    "query": "形點 元朗",
+    "photon_rank": 1,
+    "photon_top": "元朗 形點 YOHO Mall (Yuen Long) 朗日路 Long Yat Road 元朗區 Yuen Long ",
+    "nominatim_rank": 1,
+    "nominatim_top": "形點 YOHO Mall, 元朗公路 Yuen Long Highway, 雞地 Kai Tei, 元朗區 Yuen L"
+  },
+  {
+    "query": "愉景新城 荃灣",
+    "photon_rank": 1,
+    "photon_top": "荃灣 (愉景新城) 巴士總站 Tsuen Wan (Discovery Park) Bus Terminus 美環街 M",
+    "nominatim_rank": 1,
+    "nominatim_top": "愉景新城 Discovery Park, 398, 白田壩新村 Pak Tin Pa San Tsuen, 荃灣區 Ts"
+  },
+  {
+    "query": "香港中文大學",
+    "photon_rank": 1,
+    "photon_top": "香港中文大學 The Chinese University of Hong Kong 新亞坊 New Asia Circ",
+    "nominatim_rank": 1,
+    "nominatim_top": "香港中文大學 The Chinese University of Hong Kong, 創新路 Chong San Ro"
+  },
+  {
+    "query": "香港科技大學",
+    "photon_rank": 1,
+    "photon_top": "香港科技大學 (北) H.K.U.S.T. (North) 大學道 University Road 西貢區 Sai Ku",
+    "nominatim_rank": 1,
+    "nominatim_top": "香港科技大學 The Hong Kong University of Science and Technology, 銀"
+  },
+  {
+    "query": "伊利沙伯醫院",
+    "photon_rank": 1,
+    "photon_top": "伊利沙伯醫院 Queen Elizabeth Hospital 加士居道 Gascoigne Road 油尖旺區 Yau",
+    "nominatim_rank": 1,
+    "nominatim_top": "伊利沙伯醫院 Queen Elizabeth Hospital, 30, 南丁格爾路 Nightingale Road,"
+  },
+  {
+    "query": "西九文化區",
+    "photon_rank": 1,
+    "photon_top": "西九文化區 West Kowloon Cultural District  油尖旺區 Yau Tsim Mong Dis",
+    "nominatim_rank": 1,
+    "nominatim_top": "西九文化區 West Kowloon Cultural District, 西九龍 West Kowloon, 油麻地 "
+  },
+  {
+    "query": "大館 中環",
+    "photon_rank": 1,
+    "photon_top": "大館 Tai Kwun 荷李活道 Hollywood Road 中西區 Central and Western Dist",
+    "nominatim_rank": 1,
+    "nominatim_top": "大館 Tai Kwun, 10, 大館里 Tai Kwun Lane, 蘇豪 SoHo, 中環 Central, 中西區"
+  },
+  {
+    "query": "軒尼詩道500號",
+    "photon_rank": null,
+    "photon_top": "(no results)",
+    "nominatim_rank": 1,
+    "nominatim_top": "軒尼詩道 Hennessy Road, 鵝頸 Bowrington, 摩利臣山 Morrison Hill, 灣仔區 W"
+  },
+  {
+    "query": "彌敦道700號 旺角",
+    "photon_rank": 1,
+    "photon_top": "彌敦道700號 700 Nathan Road 彌敦道 Nathan Road 油尖旺區 Yau Tsim Mong D",
+    "nominatim_rank": 1,
+    "nominatim_top": "彌敦道 Nathan Road, 旺角 Mong Kok, 油尖旺區 Yau Tsim Mong District, 九"
+  }
+]

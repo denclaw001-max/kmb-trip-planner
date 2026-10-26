@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+web/node_modules/
+web/src/assets/
+phase0/*.pdf
+data/_json_bus.tmp.json
+*.muse-github-snapshot-sync.json
